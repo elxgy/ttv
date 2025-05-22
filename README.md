@@ -1,2 +1,2 @@
 # ttv
-text to voice aplication because im lazy to read
+text to voice application because im lazy to read
