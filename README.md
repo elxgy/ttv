@@ -1,4 +1,4 @@
-# Text-to-Speech File Reader
+# LZT (Lazy to read)
 
 **CURRENTLY UNDER DEVELOPMENT**
 

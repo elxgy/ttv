@@ -6,7 +6,8 @@ import concurrent.futures
 import hashlib
 import json
 from pathlib import Path
-from typing import List, Optional, Tuple, Dict
+from typing import List, Optional, Tuple, Dict, Any
+import threading
 
 from .language_detector import detect_language
 
@@ -39,6 +40,10 @@ class TTSEngine:
         self.cache_size_limit_mb = cache_size_limit_mb
         self.cache_index_file = os.path.join(self.cache_dir, 'cache_index.json')
         self.cache_index: Dict[str, Dict] = {}
+        
+        # Progress tracking
+        self._progress_lock = threading.Lock()
+        self._progress = {"completed": 0, "total": 0, "last_update_time": 0}
         
         # Initialize cache if enabled
         if self.enable_cache:
@@ -456,16 +461,44 @@ class TTSEngine:
         try:
             if lang is None:
                 lang = self.detect_language_from_text(text)
-                
-            progress = f"[{index}/{total}] "
-            sys.stdout.write(f"{progress}Generating audio for: '{text[:50]}{'...' if len(text) > 50 else ''}' ({lang})\n")
-            sys.stdout.flush()
             
             success = self._generate_audio_file(text, output_file, lang)
+            
+            # Update progress counter
+            with self._progress_lock:
+                self._progress["completed"] += 1
+                
+                # Only update progress display if enough time has passed (to avoid excessive updates)
+                current_time = time.time()
+                if current_time - self._progress["last_update_time"] > 0.1:  # Update at most every 100ms
+                    self._display_progress_bar()
+                    self._progress["last_update_time"] = current_time
+            
             return (success, output_file, index)
         except Exception as e:
-            print(f"Error in worker thread: {str(e)}")
+            print(f"\nError in worker thread: {str(e)}")
             return (False, output_file, index)
+    
+    def _display_progress_bar(self):
+        """Display a progress bar for audio generation."""
+        completed = self._progress["completed"]
+        total = self._progress["total"]
+        
+        if total == 0:
+            return
+            
+        percent = int(100 * completed / total)
+        bar_length = 40
+        filled_length = int(bar_length * completed / total)
+        
+        bar = '█' * filled_length + '░' * (bar_length - filled_length)
+        
+        sys.stdout.write(f"\rGenerating audio: [{bar}] {percent}% ({completed}/{total}) ")
+        sys.stdout.flush()
+        
+        if completed >= total:
+            sys.stdout.write("\n")
+            sys.stdout.flush()
     
     def _play_audio_file(self, file_path: str) -> bool:
         """
@@ -588,11 +621,15 @@ class TTSEngine:
             lang = self.detect_language_from_text(sample_text)
             print(f"Detected language: {lang}")
             
+        # Reset progress tracking
+        with self._progress_lock:
+            self._progress = {"completed": 0, "total": len(chunks), "last_update_time": time.time()}
+            
         if save_to_files:
             if not os.path.exists(output_dir):
                 os.makedirs(output_dir)
                 
-            print(f"Generating {len(chunks)} audio files in parallel...")
+            print(f"Generating {len(chunks)} audio files...")
             
             tasks = []
             for i, chunk in enumerate(chunks, 1):
@@ -605,11 +642,16 @@ class TTSEngine:
                 
             with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                 results = list(executor.map(self._generate_audio_worker, tasks))
+            
+            # Ensure the progress bar shows 100% at the end
+            with self._progress_lock:
+                self._progress["completed"] = self._progress["total"]
+                self._display_progress_bar()
                 
             print(f"Successfully generated {sum(1 for r in results if r[0])} audio files.")
                 
         else:
-            print("Generating audio for all chunks in parallel...")
+            print("Generating audio files...")
             start_time = time.time()
             
             temp_dir = tempfile.mkdtemp()
@@ -628,13 +670,18 @@ class TTSEngine:
                 with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
                     results = list(executor.map(self._generate_audio_worker, tasks))
 
+                # Ensure the progress bar shows 100% at the end
+                with self._progress_lock:
+                    self._progress["completed"] = self._progress["total"]
+                    self._display_progress_bar()
+                
                 ordered_files = []
                 for success, file_path, index in sorted(results, key=lambda x: x[2]):
                     if success:
                         ordered_files.append(file_path)
                 
                 end_time = time.time()
-                print(f"\nGenerated {len(ordered_files)} audio files in {end_time - start_time:.2f} seconds")
+                print(f"Generated {len(ordered_files)} audio files in {end_time - start_time:.2f} seconds")
                 
                 if ordered_files:
                     print("\nPlaying all audio continuously...")
