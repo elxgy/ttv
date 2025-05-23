@@ -27,11 +27,17 @@ A simple system for reading text and PDF files and converting their content to s
 
 2. Install required packages:
    ```bash
-   # For basic functionality
-   pip install PyPDF2
+   # Install all dependencies using requirements.txt
+   pip install -r requirements.txt
+   ```
+
+   Or install individual packages manually:
+   ```bash
+   # Core dependencies
+   pip install PyPDF2 pyttsx3 gtts
    
-   # For pyttsx3 (offline TTS)
-   pip install pyttsx3
+   # Optional packages for enhanced language detection
+   pip install langdetect langid
    
    # For pyttsx3 on Linux, you also need espeak
    sudo apt-get install espeak  # Debian/Ubuntu
@@ -39,9 +45,6 @@ A simple system for reading text and PDF files and converting their content to s
    sudo dnf install espeak      # Fedora
    # or
    sudo pacman -S espeak        # Arch Linux
-   
-   # For Google TTS support
-   pip install gtts
    
    # For audio playback (Linux)
    sudo apt-get install mpg123  # or mpg321, mplayer, etc.

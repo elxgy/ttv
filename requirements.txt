@@ -1,0 +1,8 @@
+# Core dependencies
+PyPDF2>=3.0.0
+pyttsx3>=2.90
+gtts>=2.3.0
+
+# Optional packages for enhanced language detection
+langdetect>=1.0.9
+langid>=1.1.6
