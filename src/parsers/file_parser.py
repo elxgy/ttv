@@ -1,6 +1,7 @@
 import os
 import re
 import PyPDF2
+import docx
 from pathlib import Path
 from typing import List, Optional
 
