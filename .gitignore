@@ -173,3 +173,10 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .cursor/rules/
+src/parsers/test.txt
+src/parsers/Artigo Grafos - Trabalho 2.pdf
+src/parsers/test_parser.py
+src/example.py
+src/test_language_detection.py
+src/test_caching.py
+sample.txt
