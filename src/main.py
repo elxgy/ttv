@@ -14,7 +14,7 @@ def main():
     
     utility_group = parser.add_argument_group('Utility Commands')
     utility_group.add_argument('--list-voices', action='store_true',
-                        help='List available voices and exit (for pyttsx3 only)')
+                        help='List available voices and exit')
     utility_group.add_argument('--clear-cache', action='store_true',
                         help='Clear the audio cache and exit')
     utility_group.add_argument('--cache-stats', action='store_true',
@@ -22,8 +22,8 @@ def main():
     
     parser.add_argument('file_path', nargs='?',
                         help='Path to the text file to read (optional for utility commands)')
-    parser.add_argument('--engine', choices=['pyttsx3', 'gtts'], default='gtts',
-                        help='TTS engine to use (pyttsx3 for offline, gtts for Google TTS)')
+    parser.add_argument('--engine', choices=['pyttsx3', 'gtts', 'silero'], default='gtts',
+                        help='TTS engine to use (pyttsx3 for offline, gtts for Google TTS, silero for neural TTS)')
     parser.add_argument('--save', action='store_true',
                         help='Save audio files instead of playing directly')
     parser.add_argument('--output-dir', default='output',
@@ -33,7 +33,7 @@ def main():
     parser.add_argument('--volume', type=float, default=1.0,
                         help='Speech volume (for pyttsx3 only, 0.0 to 1.0)')
     parser.add_argument('--voice', default=None,
-                        help='Voice to use (for pyttsx3 only)')
+                        help='Voice to use (specific ID for each engine)')
     parser.add_argument('--workers', type=int, default=None,
                         help='Number of worker threads for parallel processing (default: auto)')
     parser.add_argument('--detect-only', action='store_true',
@@ -49,6 +49,14 @@ def main():
     cache_group.add_argument('--cache-limit', type=int, default=500,
                         help='Maximum cache size in MB (default: 500)')
     
+    silero_group = parser.add_argument_group('Silero TTS Options')
+    silero_group.add_argument('--silero-speaker', default=None,
+                        help='Speaker ID for Silero TTS (default: language default)')
+    silero_group.add_argument('--silero-model-dir', default=None,
+                        help='Directory to store Silero models (default: ~/.ttv_models)')
+    silero_group.add_argument('--silero-device', choices=['cpu', 'cuda'], default='cpu',
+                        help='Device for Silero inference (default: cpu)')
+    
     args = parser.parse_args()
     
     utility_mode = args.list_voices or args.clear_cache or args.cache_stats
@@ -59,9 +67,16 @@ def main():
     if args.no_cache:
         args.cache = False
     
-    tts = TTSEngine(engine_type=args.engine, max_workers=args.workers,
-                   enable_cache=args.cache, cache_dir=args.cache_dir,
-                   cache_size_limit_mb=args.cache_limit)
+    tts = TTSEngine(
+        engine_type=args.engine, 
+        max_workers=args.workers,
+        enable_cache=args.cache, 
+        cache_dir=args.cache_dir,
+        cache_size_limit_mb=args.cache_limit,
+        silero_speaker=args.silero_speaker,
+        silero_model_dir=args.silero_model_dir,
+        silero_device=args.silero_device
+    )
     
     if args.clear_cache:
         tts.clear_cache()
@@ -78,16 +93,12 @@ def main():
         return
     
     if args.list_voices:
-        if args.engine != 'pyttsx3':
-            print("Voice listing is only supported for pyttsx3 engine")
-            return
-            
         voices = tts.get_available_voices()
         if not voices:
-            print("No voices available or pyttsx3 not initialized properly")
+            print(f"No voices available for the {args.engine} engine or engine not initialized properly")
             return
             
-        print("Available voices:")
+        print(f"Available voices for {args.engine}:")
         for i, voice in enumerate(voices):
             print(f"{i+1}. ID: {voice['id']}")
             print(f"   Name: {voice['name']}")
@@ -98,6 +109,13 @@ def main():
     
     if args.engine == 'pyttsx3':
         tts.set_properties(rate=150, volume=args.volume, voice=args.voice)
+    elif args.engine == 'silero':
+        if args.voice:
+            print(f"Setting Silero voice to: {args.voice}")
+            tts.set_properties(voice=args.voice)
+        elif args.silero_speaker:
+            print(f"Setting Silero voice to: {args.silero_speaker}")
+            pass
     
     file_parser = FileParser()
     
