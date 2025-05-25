@@ -1,16 +1,16 @@
 # Core dependencies
-PyPDF2>=3.0.0
-pyttsx3>=2.90
-gtts>=2.3.0
-docx>=0.8.11
+PyPDF2
+pyttsx3
+gtts
+docx
 # Optional packages for enhanced language detection
-langdetect>=1.0.9
-langid>=1.1.6
-fasttext>=0.9.2  # Advanced language detection
+langdetect
+langid
+fasttext # Advanced language detection
 
 # Dependencies for Silero 
-torch>=1.13.0
-torchaudio>=0.13.0
-omegaconf>=2.3.0
-tqdm>=4.64.0     
-requests>=2.28.0 
+torch
+torchaudio
+omegaconf
+tqdm   
+requests
