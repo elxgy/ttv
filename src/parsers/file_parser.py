@@ -1,7 +1,7 @@
 import os
 import re
 import PyPDF2
-import docx
+from docx import Document
 from pathlib import Path
 from typing import List, Optional
 
@@ -61,7 +61,7 @@ class FileParser:
     
     def _read_docx(self, file_path: str) -> str:
         """Extract text from DOCX file."""
-        doc = docx.Document(file_path)
+        doc = Document(file_path)
         text = ""
         for para in doc.paragraphs:
             text += para.text + "\n"
