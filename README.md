@@ -22,7 +22,7 @@ A simple system for reading text and PDF files and converting their content to s
   - Customizable voices for each engine
 
 - **Performance Optimizations**:
-  - **Audio caching system** (up to 500x faster for repeated content)
+  - **Audio caching system** 
   - **Parallel processing** for faster audio generation
   - Optimized chunk processing for balanced playback quality
 

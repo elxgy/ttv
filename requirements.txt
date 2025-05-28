@@ -3,6 +3,7 @@ PyPDF2
 pyttsx3
 gtts
 docx
+
 # Optional packages for enhanced language detection
 langdetect
 langid
